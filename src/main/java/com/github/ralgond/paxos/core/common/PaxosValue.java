@@ -7,6 +7,12 @@ public class PaxosValue {
     public Long value_sn;
     public String value;
 
+    public PaxosValue() {
+        this.server_id = -1;
+        this.value_sn = -1L;
+        this.value = "";
+    }
+
     public PaxosValue(Integer server_id, Long value_sn, String value) {
         this.server_id = server_id;
         this.value_sn = value_sn;
@@ -29,5 +35,9 @@ public class PaxosValue {
     @Override
     public int hashCode() {
         return Objects.hash(server_id, value_sn);
+    }
+
+    public boolean isNull() {
+        return this.server_id == -1 && this.value_sn == -1L;
     }
 }
