@@ -14,7 +14,7 @@ public interface PaxosPersistent {
 
     public Optional<PaxosPromised> getPromised(Long paxos_id);
 
-    public Long getLatestValueSerialNumberAndIncrease();
+    public Long incrSerialNumber();
 
     public void saveResult(Long paxos_id, PaxosValue paxos_value);
 
@@ -23,6 +23,8 @@ public interface PaxosPersistent {
      * @return -1 means there is not paxos_value stored in this machine
      */
     public Long getMaxPaxosId();
+
+    public void saveMaxPaxosId(Long paxosId);
 
     public void saveProposalId(Long proposalId);
 
