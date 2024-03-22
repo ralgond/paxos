@@ -18,9 +18,6 @@ public class PaxosAcceptResponse {
      * @return
      */
     public boolean isAccepted() {
-        if (this.promised_proposal_id < 0) {
-            return false;
-        }
-        return this.proposal_id >= this.promised_proposal_id;
+        return proposal_id >= promised_proposal_id;
     }
 }

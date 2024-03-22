@@ -1,5 +1,6 @@
 package com.github.ralgond.paxos.core.env;
 
+import com.github.ralgond.paxos.core.common.PaxosAccepted;
 import com.github.ralgond.paxos.core.common.PaxosPromised;
 import com.github.ralgond.paxos.core.common.PaxosValue;
 
@@ -10,27 +11,25 @@ public interface PaxosPersistent {
 
     public void close();
 
-    public void savePromised(PaxosPromised promised);
-
-    public Optional<PaxosPromised> getPromised(Long paxos_id);
-
     public Long incrSerialNumber();
 
-    public void saveResult(Long paxos_id, PaxosValue paxos_value);
-
-    /**
-     *
-     * @return -1 means there is not paxos_value stored in this machine.
-     */
-    public Long getMaxPaxosId();
-
-    public void saveMaxPaxosId(Long paxosId);
-
-    public void saveProposalId(Long proposalId);
-
+    public void saveProposalIdOnProposer(Long proposalId);
     /**
      *
      * @return -1 means not any proposal id saved.
      */
-    public Long getProposalId();
+    public Long getProposalIdOnProposer();
+
+
+    public Long getProposalIdOnAcceptor();
+
+    public void saveProposalIdOnAcceptor(Long proposal_id);
+
+    /**
+     *
+     * @return new PaxosAccepted() when there is not any accepted value.
+     */
+    public PaxosAccepted getMaxProposalIdAccepted();
+
+    public void saveAccepted(PaxosAccepted accepted);
 }

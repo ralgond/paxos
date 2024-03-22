@@ -51,16 +51,13 @@ public class Proposer {
         }
 
         public void start(PaxosEnvironment env) {
-            this.proposal_id =  env.persistent.getProposalId() + 1;
-            this.paxos_id = env.persistent.getMaxPaxosId() + 1;
+            this.proposal_id =  env.persistent.getProposalIdOnProposer() + 1;
             this.proposal_value = this.paxos_value;
 
             for (var server_id : env.config.getServers().keySet()) {
                 PaxosPrepareRequest req = new PaxosPrepareRequest(
                         server_id,
-                        this.proposal_id,
-                        this.paxos_id,
-                        this.proposal_value
+                        this.proposal_id
                 );
                 env.sender.sendPrepareRequest(req);
             }
@@ -103,12 +100,12 @@ public class Proposer {
                 if (this.prepare_resp_map.size() >= env.config.getServers().size() / 2 + 1) {
                     Long max_promised_id = -1L;
                     for (var prepare_resp : this.notpromised_prepare_resp_map.values()) {
-                        if (prepare_resp.promised.proposal_id > max_promised_id) {
-                            max_promised_id = prepare_resp.promised.proposal_id;
+                        if (prepare_resp.accepted.proposal > max_promised_id) {
+                            max_promised_id = prepare_resp.accepted.proposal;
                         }
                     }
 
-                    env.persistent.saveProposalId(max_promised_id);
+                    env.persistent.saveProposalIdOnProposer(max_promised_id);
                     this.start(env);
                 }
                 return;
@@ -121,21 +118,20 @@ public class Proposer {
                 PaxosValue max_promised_value = new PaxosValue();
 
                 for (var prepare_resp : this.prepare_resp_map.values()) {
-                    if (prepare_resp.promised.proposal_id > max_promised_id) {
-                        max_promised_id = prepare_resp.promised.proposal_id;
-                        max_promised_value = prepare_resp.promised.value;
+                    if (prepare_resp.accepted.proposal > max_promised_id) {
+                        max_promised_id = prepare_resp.accepted.proposal;
+                        max_promised_value = prepare_resp.accepted.value;
                     }
                 }
 
-                assert (max_promised_id >= this.proposal_id);
-
-                env.persistent.saveProposalId(max_promised_id);
+                env.persistent.saveProposalIdOnProposer(max_promised_id);
                 this.proposal_id = max_promised_id;
                 this.proposal_value = max_promised_value;
 
-                for (var prepare_resp : this.prepare_resp_map.values()) {
-                    var req = new PaxosAcceptRequest(prepare_resp.server_id,
-                            this.paxos_id, max_promised_id, max_promised_value);
+                for (var server_id : env.config.getServers().keySet()) {
+                    var req = new PaxosAcceptRequest(server_id,
+                            max_promised_id,
+                            max_promised_value);
                     env.sender.sendAcceptRequest(req);
                 }
 
@@ -163,7 +159,6 @@ public class Proposer {
             this.accept_resp_map.put(resp.server_id, resp);
 
             if (this.accept_resp_map.size() >= env.config.getServers().size() / 2 + 1) {
-                env.persistent.saveMaxPaxosId(this.paxos_id);
                 if (this.proposal_value.equals(this.paxos_value)) {
                     this.stop(env);
                 } else {
