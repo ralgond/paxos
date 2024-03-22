@@ -20,7 +20,7 @@ public interface PaxosPersistent {
 
     /**
      *
-     * @return -1 means there is not paxos_value stored in this machine
+     * @return -1 means there is not paxos_value stored in this machine.
      */
     public Long getMaxPaxosId();
 
@@ -28,5 +28,9 @@ public interface PaxosPersistent {
 
     public void saveProposalId(Long proposalId);
 
+    /**
+     *
+     * @return -1 means not any proposal id saved.
+     */
     public Long getProposalId();
 }

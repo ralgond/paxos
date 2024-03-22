@@ -1,6 +1,7 @@
 package com.github.ralgond.paxos.core.component;
 
 import java.util.HashMap;
+import java.util.TreeMap;
 
 import com.github.ralgond.paxos.core.common.PaxosValue;
 import com.github.ralgond.paxos.core.env.PaxosEnvironment;
@@ -25,23 +26,23 @@ public class Proposer {
 
         PaxosValue proposal_value;
 
-        HashMap<Integer, PaxosPrepareResponse> prepare_resp_map;
+        TreeMap<Integer, PaxosPrepareResponse> prepare_resp_map;
 
-        HashMap<Integer, PaxosPrepareResponse> notpromised_prepare_resp_map;
+        TreeMap<Integer, PaxosPrepareResponse> notpromised_prepare_resp_map;
 
-        HashMap<Integer, PaxosAcceptResponse> accept_resp_map;
+        TreeMap<Integer, PaxosAcceptResponse> accept_resp_map;
 
-        HashMap<Integer, PaxosAcceptResponse> notaccepted_accept_resp_map;
+        TreeMap<Integer, PaxosAcceptResponse> notaccepted_accept_resp_map;
 
         public PaxosStateMachine(PaxosValue paxos_value) {
             this.paxos_value = paxos_value;
             this.stopped = false;
             this.preparing = true;
-            this.prepare_resp_map = new HashMap<>();
-            this.accept_resp_map = new HashMap<>();
+            this.prepare_resp_map = new TreeMap<>();
+            this.accept_resp_map = new TreeMap<>();
 
-            this.notpromised_prepare_resp_map = new HashMap<>();
-            this.notaccepted_accept_resp_map = new HashMap<>();
+            this.notpromised_prepare_resp_map = new TreeMap<>();
+            this.notaccepted_accept_resp_map = new TreeMap<>();
         }
 
         @Override
@@ -88,7 +89,14 @@ public class Proposer {
         }
 
         public void onRecvPrepareResponse(PaxosPrepareResponse resp, PaxosEnvironment env) {
-            if (!this.isPreparing()) { return; }
+            if (!this.isPreparing())
+                return;
+
+            if (!env.config.getServers().containsKey(resp.server_id))
+                return;
+
+            if (!resp.proposal_id.equals(this.proposal_id))
+                return;
 
             if (!resp.isPromised()) {
                 this.notpromised_prepare_resp_map.put(resp.server_id, resp);
@@ -119,7 +127,10 @@ public class Proposer {
                     }
                 }
 
+                assert (max_promised_id >= this.proposal_id);
+
                 env.persistent.saveProposalId(max_promised_id);
+                this.proposal_id = max_promised_id;
                 this.proposal_value = max_promised_value;
 
                 for (var prepare_resp : this.prepare_resp_map.values()) {
@@ -127,13 +138,27 @@ public class Proposer {
                             this.paxos_id, max_promised_id, max_promised_value);
                     env.sender.sendAcceptRequest(req);
                 }
+
+                this.preparing = false;
             }
         }
         public void onRecvAcceptResponse(PaxosAcceptResponse resp, PaxosEnvironment env) {
-            if (this.isPreparing()) { return; }
-
-            if (!resp.isAccepted())
+            if (this.isPreparing())
                 return;
+
+            if (!env.config.getServers().containsKey(resp.server_id))
+                return;
+
+            if (!resp.proposal_id.equals(this.proposal_id))
+                return;
+
+            if (!resp.isAccepted()) {
+                this.notaccepted_accept_resp_map.put(resp.server_id, resp);
+                if (this.notaccepted_accept_resp_map.size() >= env.config.getServers().size() / 2 + 1) {
+                    this.start(env);
+                }
+                return;
+            }
 
             this.accept_resp_map.put(resp.server_id, resp);
 
