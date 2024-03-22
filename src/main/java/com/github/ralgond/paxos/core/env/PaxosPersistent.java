@@ -1,7 +1,7 @@
 package com.github.ralgond.paxos.core.env;
 
-import com.github.ralgond.paxos.core.common.PaxosAccept;
-import com.github.ralgond.paxos.core.common.PaxosPrepare;
+import com.github.ralgond.paxos.core.common.PaxosPromised;
+import com.github.ralgond.paxos.core.common.PaxosValue;
 
 import java.util.Optional;
 
@@ -10,18 +10,21 @@ public interface PaxosPersistent {
 
     public void close();
 
+    public void savePromised(PaxosPromised promised);
+
+    public Optional<PaxosPromised> getPromised(Long paxos_id);
+
     public Long getLatestValueSerialNumberAndIncrease();
 
-    public Optional<Long> getMaxPromisedId();
+    public void saveResult(Long paxos_id, PaxosValue paxos_value);
 
-    public void savePrepare(PaxosPrepare prepare);
+    /**
+     *
+     * @return -1 means there is not paxos_value stored in this machine
+     */
+    public Long getMaxPaxosId();
 
-    public Optional<PaxosPrepare> getPrepare(Long promised_id);
+    public void saveProposalId(Long proposalId);
 
-
-    public void saveAccept(PaxosAccept accept);
-
-    public Optional<PaxosAccept> getAccept(Long version);
-
-    public Optional<Long> getAcceptedMaxVersion();
+    public Long getProposalId();
 }
