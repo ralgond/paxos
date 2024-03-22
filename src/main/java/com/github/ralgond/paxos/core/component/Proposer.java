@@ -27,7 +27,11 @@ public class Proposer {
 
         HashMap<Integer, PaxosPrepareResponse> prepare_resp_map;
 
+        HashMap<Integer, PaxosPrepareResponse> notpromised_prepare_resp_map;
+
         HashMap<Integer, PaxosAcceptResponse> accept_resp_map;
+
+        HashMap<Integer, PaxosAcceptResponse> notaccepted_accept_resp_map;
 
         public PaxosStateMachine(PaxosValue paxos_value) {
             this.paxos_value = paxos_value;
@@ -35,6 +39,9 @@ public class Proposer {
             this.preparing = true;
             this.prepare_resp_map = new HashMap<>();
             this.accept_resp_map = new HashMap<>();
+
+            this.notpromised_prepare_resp_map = new HashMap<>();
+            this.notaccepted_accept_resp_map = new HashMap<>();
         }
 
         @Override
@@ -83,8 +90,21 @@ public class Proposer {
         public void onRecvPrepareResponse(PaxosPrepareResponse resp, PaxosEnvironment env) {
             if (!this.isPreparing()) { return; }
 
-            if (!resp.isPromised())
+            if (!resp.isPromised()) {
+                this.notpromised_prepare_resp_map.put(resp.server_id, resp);
+                if (this.prepare_resp_map.size() >= env.config.getServers().size() / 2 + 1) {
+                    Long max_promised_id = -1L;
+                    for (var prepare_resp : this.notpromised_prepare_resp_map.values()) {
+                        if (prepare_resp.promised.proposal_id > max_promised_id) {
+                            max_promised_id = prepare_resp.promised.proposal_id;
+                        }
+                    }
+
+                    env.persistent.saveProposalId(max_promised_id);
+                    this.start(env);
+                }
                 return;
+            }
 
             this.prepare_resp_map.put(resp.server_id, resp);
 
