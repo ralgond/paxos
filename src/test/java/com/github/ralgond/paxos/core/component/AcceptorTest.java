@@ -7,7 +7,6 @@ import com.github.ralgond.paxos.core.protocol.PaxosAcceptRequest;
 import com.github.ralgond.paxos.core.protocol.PaxosAcceptResponse;
 import com.github.ralgond.paxos.core.protocol.PaxosPrepareRequest;
 import com.github.ralgond.paxos.core.protocol.PaxosPrepareResponse;
-import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -18,7 +17,8 @@ public class AcceptorTest {
     public void testPrepare01() {
         var env = new PaxosEnvironmentTest(new PaxosConfigTest(),
                 new PaxosPacketSenderTest(),
-                new PaxosPersistentTest());
+                new PaxosPersistentTest(),
+                new PaxosTimerManagerTest());
 
         var acceptor = new Acceptor();
         acceptor.start(env);
@@ -73,7 +73,8 @@ public class AcceptorTest {
     public void testAccept01() {
         var env = new PaxosEnvironmentTest(new PaxosConfigTest(),
                 new PaxosPacketSenderTest(),
-                new PaxosPersistentTest());
+                new PaxosPersistentTest(),
+                new PaxosTimerManagerTest());
 
         var acceptor = new Acceptor();
         acceptor.start(env);

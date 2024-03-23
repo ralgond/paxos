@@ -103,7 +103,7 @@ public class Proposer {
 
             if (!resp.isPromised()) {
                 this.notpromised_prepare_resp_map.put(resp.server_id, resp);
-                if (this.prepare_resp_map.size() >= env.config.getServers().size() / 2 + 1) {
+                if (this.notpromised_prepare_resp_map.size() >= env.config.getServers().size() / 2 + 1) {
                     Long max_promised_id = -1L;
                     for (var prepare_resp : this.notpromised_prepare_resp_map.values()) {
                         if (prepare_resp.accepted.proposal > max_promised_id) {

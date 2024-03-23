@@ -10,9 +10,10 @@ public class PaxosEnvironment {
 
     public PaxosTimerManager timer_manager;
 
-    public PaxosEnvironment(PaxosConfig config, PaxosPacketSender sender, PaxosPersistent persistent) {
+    public PaxosEnvironment(PaxosConfig config, PaxosPacketSender sender, PaxosPersistent persistent, PaxosTimerManager timer_manager) {
         this.config = config;
         this.sender = sender;
         this.persistent = persistent;
+        this.timer_manager = timer_manager;
     }
 }

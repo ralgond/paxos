@@ -14,4 +14,13 @@ public class PaxosAcceptRequest {
         this.proposal_id = proposal_id;
         this.proposal_value = proposal_value;
     }
+
+    @Override
+    public String toString() {
+        return "PaxosAcceptRequest{" +
+                "server_id=" + server_id +
+                ", proposal_id=" + proposal_id +
+                ", proposal_value=" + proposal_value +
+                '}';
+    }
 }
