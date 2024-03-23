@@ -1,6 +1,5 @@
 package com.github.ralgond.paxos.core.component;
 
-import java.util.HashMap;
 import java.util.TreeMap;
 
 import com.github.ralgond.paxos.core.common.PaxosValue;
@@ -18,9 +17,6 @@ public class Proposer {
         boolean stopped;
 
         boolean preparing;
-
-        Long paxos_id;
-
 
         Long proposal_id;
 
@@ -92,6 +88,9 @@ public class Proposer {
         }
 
         public void onRecvPrepareResponse(PaxosPrepareResponse resp, PaxosEnvironment env) {
+            if (this.isStopped())
+                return;
+
             if (!this.isPreparing())
                 return;
 
@@ -153,6 +152,9 @@ public class Proposer {
             }
         }
         public void onRecvAcceptResponse(PaxosAcceptResponse resp, PaxosEnvironment env) {
+            if (this.isStopped())
+                return;
+
             if (this.isPreparing())
                 return;
 
