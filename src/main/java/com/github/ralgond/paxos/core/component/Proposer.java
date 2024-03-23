@@ -51,9 +51,15 @@ public class Proposer {
         }
 
         public void start(PaxosEnvironment env) {
+            /*
+             * Choose a new proposal number n
+             */
             this.proposal_id =  env.persistent.getProposalIdOnProposer() + 1;
             this.proposal_value = this.paxos_value;
 
+            /*
+             * Broadcast Prepare(n) to all servers
+             */
             for (var server_id : env.config.getServers().keySet()) {
                 PaxosPrepareRequest req = new PaxosPrepareRequest(
                         server_id,
@@ -114,9 +120,14 @@ public class Proposer {
             this.prepare_resp_map.put(resp.server_id, resp);
 
             if (this.prepare_resp_map.size() >= env.config.getServers().size() / 2 + 1) {
-                Long max_promised_id = -1L;
-                PaxosValue max_promised_value = new PaxosValue();
+                Long max_promised_id = this.proposal_id;
+                PaxosValue max_promised_value = this.paxos_value;
 
+                /*
+                 * When responses received from majority:
+                 * if any acceptedValues returned, replace value with acceptedValue for
+                 * highest acceptedProposal.
+                 */
                 for (var prepare_resp : this.prepare_resp_map.values()) {
                     if (prepare_resp.accepted.proposal > max_promised_id) {
                         max_promised_id = prepare_resp.accepted.proposal;
@@ -128,6 +139,9 @@ public class Proposer {
                 this.proposal_id = max_promised_id;
                 this.proposal_value = max_promised_value;
 
+                /*
+                 * Broadcast Accept(n, value) to all servers.
+                 */
                 for (var server_id : env.config.getServers().keySet()) {
                     var req = new PaxosAcceptRequest(server_id,
                             max_promised_id,

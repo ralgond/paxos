@@ -1,8 +1,6 @@
 package com.github.ralgond.paxos.core.env;
 
 import com.github.ralgond.paxos.core.common.PaxosAccepted;
-import com.github.ralgond.paxos.core.common.PaxosPromised;
-import com.github.ralgond.paxos.core.common.PaxosValue;
 
 import java.util.Optional;
 
