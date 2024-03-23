@@ -1,9 +1,9 @@
 package com.github.ralgond.paxos.core.env;
 
-import java.util.HashMap;
+import java.util.TreeMap;
 
 public interface PaxosConfig {
-    public Integer getServerId();
+    Integer getServerId();
 
-    public HashMap<Integer, ServerConfig> getServers();
+    TreeMap<Integer, ServerConfig> getServers();
 }

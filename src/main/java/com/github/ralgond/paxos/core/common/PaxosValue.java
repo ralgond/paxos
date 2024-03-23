@@ -40,4 +40,13 @@ public class PaxosValue {
     public boolean isNull() {
         return this.server_id == -1 && this.value_sn == -1L;
     }
+
+    @Override
+    public String toString() {
+        return "PaxosValue{" +
+                "server_id=" + server_id +
+                ", value_sn=" + value_sn +
+                ", value='" + value + '\'' +
+                '}';
+    }
 }

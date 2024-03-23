@@ -11,4 +11,12 @@ public class PaxosPrepareRequest {
         this.server_id = server_id;
         this.proposal_id = proposal_id;
     }
+
+    @Override
+    public String toString() {
+        return "PaxosPrepareRequest{" +
+                "server_id=" + server_id +
+                ", proposal_id=" + proposal_id +
+                '}';
+    }
 }

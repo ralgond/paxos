@@ -20,4 +20,13 @@ public class PaxosAcceptResponse {
     public boolean isAccepted() {
         return proposal_id >= promised_proposal_id;
     }
+
+    @Override
+    public String toString() {
+        return "PaxosAcceptResponse{" +
+                "server_id=" + server_id +
+                ", proposal_id=" + proposal_id +
+                ", promised_proposal_id=" + promised_proposal_id +
+                '}';
+    }
 }

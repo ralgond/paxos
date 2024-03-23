@@ -22,10 +22,15 @@ public class Acceptor {
 
         Long proposal_id_on_acceptor = env.persistent.getProposalIdOnAcceptor();
         if (req.proposal_id > proposal_id_on_acceptor) {
-            // n > minProposal the minProposal = n
-            // Return (acceptedProposal, acceptedValue)
+            /*
+             * n > minProposal the minProposal = n
+             * Return (acceptedProposal, acceptedValue)
+             */
             env.persistent.saveProposalIdOnAcceptor(req.proposal_id);
             var pa = env.persistent.getMaxProposalIdAccepted();
+            if (pa == null) {
+                pa = new PaxosAccepted();
+            }
             var resp = new PaxosPrepareResponse(req.server_id, req.proposal_id, proposal_id_on_acceptor, pa);
             env.sender.sendPrepareResponse(resp);
         } else {
@@ -41,8 +46,10 @@ public class Acceptor {
 
         Long proposal_id_on_acceptor = env.persistent.getProposalIdOnAcceptor();
         if (req.proposal_id >= proposal_id_on_acceptor) {
-            // if n >= minProposal then acceptedProposal = minProposal = n, acceptedValue = value
-            // return (minProposal)
+            /*
+             * if n >= minProposal then acceptedProposal = minProposal = n, acceptedValue = value
+             * return (minProposal)
+             */
             proposal_id_on_acceptor = req.proposal_id;
             env.persistent.saveProposalIdOnAcceptor(req.proposal_id);
             var pa = new PaxosAccepted(req.proposal_id, req.proposal_value);
