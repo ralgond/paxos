@@ -2,6 +2,7 @@
 A Java implementation of Paxos algorithm
 
 ![CI](https://github.com/ralgond/paxos/actions/workflows/maven.yml/badge.svg)
+[![codecov](https://codecov.io/github/ralgond/paxos/graph/badge.svg?token=42RITIU811)](https://codecov.io/github/ralgond/paxos)
 
 ## Requirements
 Java 22
