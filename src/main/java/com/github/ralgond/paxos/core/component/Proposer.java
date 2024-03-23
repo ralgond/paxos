@@ -73,6 +73,28 @@ public class Proposer {
             assert (this.proposal_value.equals(this.paxos_value));
             this.stopped = true;
             env.timer_manager.removeTimer(this);
+
+            this.proposal_id = -1L;
+
+            this.proposal_value = new PaxosValue();
+
+            this.prepare_resp_map.clear();
+            this.accept_resp_map.clear();
+
+            this.notpromised_prepare_resp_map.clear();
+            this.notaccepted_accept_resp_map.clear();
+        }
+
+        /**
+         * For test
+         * @return
+         */
+        public boolean nothingChangeAfterStopped() {
+            return proposal_id == -1L && proposal_value.isNone() &&
+                    prepare_resp_map.isEmpty() &&
+                    accept_resp_map.isEmpty() &&
+                    notpromised_prepare_resp_map.isEmpty() &&
+                    notaccepted_accept_resp_map.isEmpty();
         }
 
         boolean isStopped() {
