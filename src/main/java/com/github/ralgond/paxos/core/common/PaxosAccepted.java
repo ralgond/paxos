@@ -18,7 +18,7 @@ public class PaxosAccepted {
     }
 
     public boolean isNone() {
-        return this.proposal < 0L;
+        return this.proposal < 0L || this.value.isNone();
     }
 
     @Override

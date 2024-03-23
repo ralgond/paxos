@@ -20,24 +20,19 @@ public class PaxosValue {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj == null) {
-            return false;
-        }
-        if (obj instanceof PaxosValue) {
-            var pe = (PaxosValue)obj;
-            return this.server_id.equals(pe.server_id) && this.value_sn.equals(pe.value_sn);
-        } else {
-            return false;
-        }
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        PaxosValue that = (PaxosValue) o;
+        return Objects.equals(server_id, that.server_id) && Objects.equals(value_sn, that.value_sn) && Objects.equals(value, that.value);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(server_id, value_sn);
+        return Objects.hash(server_id, value_sn, value);
     }
 
-    public boolean isNull() {
+    public boolean isNone() {
         return this.server_id == -1 && this.value_sn == -1L;
     }
 

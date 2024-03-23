@@ -8,7 +8,7 @@ public class PaxosValueTest {
 
     @org.junit.Test
     public void testEquals() {
-        var pv1 = new PaxosValue(1, Long.valueOf(2), "test");
+        var pv1 = new PaxosValue(1, Long.valueOf(2), "test2");
 
         assertEquals(pv1, new PaxosValue(1, Long.valueOf(2), "test2"));
 
@@ -23,6 +23,6 @@ public class PaxosValueTest {
 
         var pv2 = new PaxosValue(1, Long.valueOf(2), "test2");
 
-        assertEquals(pv1.hashCode(), pv2.hashCode());
+        assertNotEquals(pv1, pv2);
     }
 }
