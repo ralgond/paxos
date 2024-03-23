@@ -1,6 +1,11 @@
 # paxos
 A Java implementation of Paxos algorithm
 
+![CI](https://github.com/ralgond/paxos/actions/workflows/maven.yml/badge.svg)
+
+## Requirements
+Java 22
+
 ## Phases
 
 ### Phase 1
