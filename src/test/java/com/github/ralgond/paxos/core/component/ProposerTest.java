@@ -87,4 +87,9 @@ public class ProposerTest {
         assertFalse(proposer.state_machine.isPreparing());
         assertTrue(proposer.state_machine.isStopped());
     }
+
+    @Test
+    public void test02() {
+
+    }
 }
