@@ -128,4 +128,50 @@ public class ProposerTest {
         assertEquals(new PaxosPrepareRequest(2, 0L), sender.prepare_req_list.get(1));
         assertEquals(new PaxosPrepareRequest(3, 0L), sender.prepare_req_list.get(2));
     }
+
+    @Test
+    public void test03ResponseCheck() {
+        var env = new PaxosEnvironmentTest(new PaxosConfigTest(),
+                new PaxosPacketSenderTest(),
+                new PaxosPersistentTest(),
+                new PaxosTimerManagerTest());
+
+        var sender = (PaxosPacketSenderTest)env.sender;
+        var persistent = (PaxosPersistentTest)env.persistent;
+
+        var proposer = new Proposer();
+
+        //
+        proposer.start(env, "abc");
+        System.out.println(proposer.state_machine.paxos_value);
+        assertFalse(proposer.state_machine.isStopped());
+        assertTrue(proposer.state_machine.isPreparing());
+        sender.prepare_req_list.clear();
+
+        // onRecvAcceptResponse
+        proposer.state_machine.onRecvAcceptResponse(new PaxosAcceptResponse(1, 1L, 1L), env);
+        assertTrue(sender.prepare_req_list.isEmpty());
+
+        proposer.state_machine.preparing = false;
+
+        proposer.state_machine.onRecvAcceptResponse(new PaxosAcceptResponse(4, 1L, 1L), env);
+        assertTrue(sender.prepare_req_list.isEmpty());
+
+        proposer.state_machine.proposal_id = 2L;
+
+        proposer.state_machine.onRecvAcceptResponse(new PaxosAcceptResponse(1, 1L, 1L), env);
+        assertTrue(sender.prepare_req_list.isEmpty());
+        assertTrue(sender.accept_req_list.isEmpty());
+
+        //
+        proposer.state_machine.preparing = true;
+
+        proposer.state_machine.onRecvPrepareResponse(new PaxosPrepareResponse(4, 2L, -1L, new PaxosAccepted()), env);
+        assertTrue(sender.prepare_req_list.isEmpty());
+        assertTrue(sender.accept_req_list.isEmpty());
+
+        proposer.state_machine.onRecvPrepareResponse(new PaxosPrepareResponse(1, 3L, -1L, new PaxosAccepted()), env);
+        assertTrue(sender.prepare_req_list.isEmpty());
+        assertTrue(sender.accept_req_list.isEmpty());
+    }
 }
