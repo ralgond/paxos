@@ -173,17 +173,17 @@ public class Proposer {
                 } else {
                     this.proposalValue = acceptedValue;
                 }
-            }
 
-            /*
-             * Broadcast Accept(n, value) to all servers
-             */
-            for (var serverId : env.config.getServers().keySet()) {
-                var req = new PaxosAcceptRequest(serverId, paxosId, proposalId, proposalValue);
-                env.sender.sendAcceptRequest(req);
-            }
+                /*
+                 * Broadcast Accept(n, value) to all servers
+                 */
+                for (var serverId : env.config.getServers().keySet()) {
+                    var req = new PaxosAcceptRequest(serverId, paxosId, proposalId, proposalValue);
+                    env.sender.sendAcceptRequest(req);
+                }
 
-            this.preparing = false;
+                this.preparing = false;
+            }
         }
         public void onRecvAcceptResponse(PaxosAcceptResponse resp, PaxosEnvironment env) {
             if (this.isStopped())
