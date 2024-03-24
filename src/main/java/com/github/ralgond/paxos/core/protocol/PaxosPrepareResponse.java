@@ -5,33 +5,22 @@ import com.github.ralgond.paxos.core.common.PaxosAccepted;
 import java.util.Objects;
 
 public class PaxosPrepareResponse {
-    public Integer server_id;
+    public Integer serverId;
 
-    public Long proposal_id;
+    public Long paxosId;
 
-    public Long proposal_id_on_acceptor;
+    public Long proposalId;
 
     public PaxosAccepted accepted;
 
-    public PaxosPrepareResponse(Integer server_id, Long proposal_id, Long proposal_id_on_acceptor, PaxosAccepted accepted) {
-        this.server_id = server_id;
-        this.proposal_id = proposal_id;
-        this.proposal_id_on_acceptor = proposal_id_on_acceptor;
+    public boolean promised;
+
+    public PaxosPrepareResponse(Integer serverId, Long paxosId, Long proposalId, PaxosAccepted accepted, boolean promised) {
+        this.serverId = serverId;
+        this.paxosId = paxosId;
+        this.proposalId = proposalId;
         this.accepted = accepted;
-    }
-
-    public boolean isPromised() {
-        return (proposal_id > proposal_id_on_acceptor);
-    }
-
-    @Override
-    public String toString() {
-        return "PaxosPrepareResponse{" +
-                "server_id=" + server_id +
-                ", proposal_id=" + proposal_id +
-                ", proposal_id_on_acceptor=" + proposal_id_on_acceptor +
-                ", accepted=" + accepted +
-                '}';
+        this.promised = promised;
     }
 
     @Override
@@ -39,11 +28,22 @@ public class PaxosPrepareResponse {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         PaxosPrepareResponse that = (PaxosPrepareResponse) o;
-        return Objects.equals(server_id, that.server_id) && Objects.equals(proposal_id, that.proposal_id) && Objects.equals(proposal_id_on_acceptor, that.proposal_id_on_acceptor) && Objects.equals(accepted, that.accepted);
+        return promised == that.promised && Objects.equals(serverId, that.serverId) && Objects.equals(paxosId, that.paxosId) && Objects.equals(proposalId, that.proposalId) && Objects.equals(accepted, that.accepted);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(server_id, proposal_id, proposal_id_on_acceptor, accepted);
+        return Objects.hash(serverId, paxosId, proposalId, accepted, promised);
+    }
+
+    @Override
+    public String toString() {
+        return "PaxosPrepareResponse{" +
+                "serverId=" + serverId +
+                ", paxosId=" + paxosId +
+                ", proposalId=" + proposalId +
+                ", accepted=" + accepted +
+                ", promised=" + promised +
+                '}';
     }
 }

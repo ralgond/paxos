@@ -11,23 +11,22 @@ public interface PaxosPersistent {
 
     public Long incrSerialNumber();
 
-    public void saveProposalIdOnProposer(Long proposalId);
+    public Long getPaxosId();
+
+    public void savePaxosId(Long paxosId);
+
+    public void saveProposalIdOnProposer(Long paxosId, Long proposalId);
     /**
      *
      * @return -1 means not any proposal id saved.
      */
-    public Long getProposalIdOnProposer();
-
-
-    public Long getProposalIdOnAcceptor();
-
-    public void saveProposalIdOnAcceptor(Long proposal_id);
+    public Long getProposalIdOnProposer(Long paxosId);
 
     /**
      *
      * @return new PaxosAccepted() when there is not any accepted value.
      */
-    public PaxosAccepted getMaxProposalIdAccepted();
+    public PaxosAccepted getAccepted(Long paxosId);
 
-    public void saveAccepted(PaxosAccepted accepted);
+    public void saveAccepted(Long paxosId, PaxosAccepted accepted);
 }

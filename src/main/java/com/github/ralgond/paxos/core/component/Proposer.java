@@ -12,77 +12,87 @@ import com.github.ralgond.paxos.core.protocol.PaxosPrepareResponse;
 
 public class Proposer {
     public static class PaxosStateMachine implements PaxosTimerManager.Timer {
-        final PaxosValue paxos_value;
+        final PaxosValue paxosValue;
 
         boolean stopped;
 
         boolean preparing;
 
-        Long proposal_id;
+        Long paxosId;
 
-        PaxosValue proposal_value;
+        Long proposalId;
 
-        TreeMap<Integer, PaxosPrepareResponse> prepare_resp_map;
+        PaxosValue proposalValue;
 
-        TreeMap<Integer, PaxosPrepareResponse> notpromised_prepare_resp_map;
+        TreeMap<Integer, PaxosPrepareResponse> prepareRespMap;
 
-        TreeMap<Integer, PaxosAcceptResponse> accept_resp_map;
+        TreeMap<Integer, PaxosPrepareResponse> notpromisedPrepareRespMap;
 
-        TreeMap<Integer, PaxosAcceptResponse> notaccepted_accept_resp_map;
+        TreeMap<Integer, PaxosAcceptResponse> acceptRespMap;
 
-        public PaxosStateMachine(PaxosValue paxos_value) {
-            this.paxos_value = paxos_value;
+        TreeMap<Integer, PaxosAcceptResponse> notacceptedAcceptRespMap;
+
+        public PaxosStateMachine(PaxosValue paxosValue) {
+            this.paxosValue = paxosValue;
             this.stopped = false;
             this.preparing = true;
-            this.prepare_resp_map = new TreeMap<>();
-            this.accept_resp_map = new TreeMap<>();
+            this.prepareRespMap = new TreeMap<>();
+            this.acceptRespMap = new TreeMap<>();
 
-            this.notpromised_prepare_resp_map = new TreeMap<>();
-            this.notaccepted_accept_resp_map = new TreeMap<>();
+            this.notpromisedPrepareRespMap = new TreeMap<>();
+            this.notacceptedAcceptRespMap = new TreeMap<>();
         }
 
         @Override
         public Long id() {
-            return this.paxos_value.value_sn;
+            return this.paxosValue.value_sn;
         }
 
         public void start(PaxosEnvironment env) {
             /*
              * Choose a new proposal number n
              */
-            this.proposal_id =  env.persistent.getProposalIdOnProposer() + 1;
-            this.proposal_value = this.paxos_value;
+            this.paxosId = env.persistent.getPaxosId();
+            this.proposalId =  env.persistent.getProposalIdOnProposer(paxosId) + 1;
+            this.proposalValue = this.paxosValue;
+
+            this.prepareRespMap.clear();
+            this.acceptRespMap.clear();
+            this.notpromisedPrepareRespMap.clear();
+            this.notacceptedAcceptRespMap.clear();
 
             /*
              * Broadcast Prepare(n) to all servers
              */
-            for (var server_id : env.config.getServers().keySet()) {
+            for (var serverId : env.config.getServers().keySet()) {
                 PaxosPrepareRequest req = new PaxosPrepareRequest(
-                        server_id,
-                        this.proposal_id
+                        serverId,
+                        paxosId,
+                        proposalId
                 );
                 env.sender.sendPrepareRequest(req);
             }
 
             this.preparing = true;
-            env.timer_manager.removeTimer(this);
-            env.timer_manager.addTimer(this, 3000L);
+            env.timerManager.removeTimer(this);
+            env.timerManager.addTimer(this, 3000L);
         }
 
         public void stop(PaxosEnvironment env) {
-            assert (this.proposal_value.equals(this.paxos_value));
+            assert (this.proposalValue.equals(this.paxosValue));
             this.stopped = true;
-            env.timer_manager.removeTimer(this);
+            env.timerManager.removeTimer(this);
 
-            this.proposal_id = -1L;
+            this.paxosId = -1L;
+            this.proposalId = -1L;
 
-            this.proposal_value = new PaxosValue();
+            this.proposalValue = new PaxosValue();
 
-            this.prepare_resp_map.clear();
-            this.accept_resp_map.clear();
+            this.prepareRespMap.clear();
+            this.acceptRespMap.clear();
 
-            this.notpromised_prepare_resp_map.clear();
-            this.notaccepted_accept_resp_map.clear();
+            this.notpromisedPrepareRespMap.clear();
+            this.notacceptedAcceptRespMap.clear();
         }
 
         /**
@@ -90,11 +100,11 @@ public class Proposer {
          * @return
          */
         public boolean nothingChangeAfterStopped() {
-            return proposal_id == -1L && proposal_value.isNone() &&
-                    prepare_resp_map.isEmpty() &&
-                    accept_resp_map.isEmpty() &&
-                    notpromised_prepare_resp_map.isEmpty() &&
-                    notaccepted_accept_resp_map.isEmpty();
+            return proposalId == -1L && proposalValue.isNone() &&
+                    prepareRespMap.isEmpty() &&
+                    acceptRespMap.isEmpty() &&
+                    notpromisedPrepareRespMap.isEmpty() &&
+                    notacceptedAcceptRespMap.isEmpty();
         }
 
         boolean isStopped() {
@@ -116,62 +126,64 @@ public class Proposer {
             if (!this.isPreparing())
                 return;
 
-            if (!env.config.getServers().containsKey(resp.server_id))
+            if (!env.config.getServers().containsKey(resp.serverId))
                 return;
 
-            if (!resp.proposal_id.equals(this.proposal_id))
+            if (!resp.paxosId.equals(this.paxosId))
                 return;
 
-            if (!resp.isPromised()) {
-                this.notpromised_prepare_resp_map.put(resp.server_id, resp);
-                if (this.notpromised_prepare_resp_map.size() >= env.config.getServers().size() / 2 + 1) {
-                    Long max_promised_id = -1L;
-                    for (var prepare_resp : this.notpromised_prepare_resp_map.values()) {
-                        if (prepare_resp.accepted.proposal > max_promised_id) {
-                            max_promised_id = prepare_resp.accepted.proposal;
+            if (!resp.proposalId.equals(this.proposalId))
+                return;
+
+            if (!resp.promised) {
+                notpromisedPrepareRespMap.put(resp.serverId, resp);
+                if (notpromisedPrepareRespMap.size() >= env.config.getMajoritySize()) {
+                    var maxProposalId = proposalId;
+                    for (var r : notpromisedPrepareRespMap.values()) {
+                        if (r.accepted.promisedId > maxProposalId) {
+                            maxProposalId = r.accepted.promisedId;
                         }
                     }
-
-                    env.persistent.saveProposalIdOnProposer(max_promised_id);
-                    this.start(env);
+                    env.persistent.saveProposalIdOnProposer(paxosId, maxProposalId);
+                    // TODO: congestion control
+                    start(env);
                 }
+
                 return;
             }
+            /*
+             * When responses received from majority:
+             * If any acceptedValue returned, replace value with acceptedValue for
+             * highest acceptedProposal
+             */
+            prepareRespMap.put(resp.serverId, resp);
+            if (prepareRespMap.size() >= env.config.getMajoritySize()) {
+                var maxAcceptedProposal = -1L;
+                var acceptedValue = new PaxosValue();
 
-            this.prepare_resp_map.put(resp.server_id, resp);
-
-            if (this.prepare_resp_map.size() >= env.config.getServers().size() / 2 + 1) {
-                Long max_promised_id = this.proposal_id;
-                PaxosValue max_promised_value = this.paxos_value;
-
-                /*
-                 * When responses received from majority:
-                 * if any acceptedValues returned, replace value with acceptedValue for
-                 * highest acceptedProposal.
-                 */
-                for (var prepare_resp : this.prepare_resp_map.values()) {
-                    if (prepare_resp.accepted.proposal > max_promised_id) {
-                        max_promised_id = prepare_resp.accepted.proposal;
-                        max_promised_value = prepare_resp.accepted.value;
+                for (var r : prepareRespMap.values()) {
+                    if (r.accepted.acceptedId > maxAcceptedProposal) {
+                        maxAcceptedProposal = r.accepted.acceptedId;
+                        acceptedValue = r.accepted.acceptedValue;
                     }
                 }
 
-                env.persistent.saveProposalIdOnProposer(max_promised_id);
-                this.proposal_id = max_promised_id;
-                this.proposal_value = max_promised_value;
-
-                /*
-                 * Broadcast Accept(n, value) to all servers.
-                 */
-                for (var server_id : env.config.getServers().keySet()) {
-                    var req = new PaxosAcceptRequest(server_id,
-                            max_promised_id,
-                            max_promised_value);
-                    env.sender.sendAcceptRequest(req);
+                if (acceptedValue.isNone()) {
+                    this.proposalValue = paxosValue;
+                } else {
+                    this.proposalValue = acceptedValue;
                 }
-
-                this.preparing = false;
             }
+
+            /*
+             * Broadcast Accept(n, value) to all servers
+             */
+            for (var serverId : env.config.getServers().keySet()) {
+                var req = new PaxosAcceptRequest(serverId, paxosId, proposalId, proposalValue);
+                env.sender.sendAcceptRequest(req);
+            }
+
+            this.preparing = false;
         }
         public void onRecvAcceptResponse(PaxosAcceptResponse resp, PaxosEnvironment env) {
             if (this.isStopped())
@@ -180,27 +192,43 @@ public class Proposer {
             if (this.isPreparing())
                 return;
 
-            if (!env.config.getServers().containsKey(resp.server_id))
+            if (!env.config.getServers().containsKey(resp.serverId))
                 return;
 
-            if (!resp.proposal_id.equals(this.proposal_id))
+            if (!resp.paxosId.equals(this.paxosId))
                 return;
 
-            if (!resp.isAccepted()) {
-                this.notaccepted_accept_resp_map.put(resp.server_id, resp);
-                if (this.notaccepted_accept_resp_map.size() >= env.config.getServers().size() / 2 + 1) {
-                    this.start(env);
+            if (!resp.proposalId.equals(this.proposalId))
+                return;
+
+            if (!resp.accepted) {
+                notacceptedAcceptRespMap.put(resp.serverId, resp);
+                if (notacceptedAcceptRespMap.size() >= env.config.getMajoritySize()) {
+                    var maxProposalId = proposalId;
+                    for (var r : notacceptedAcceptRespMap.values()) {
+                        if (r.promisedProposalId > maxProposalId) {
+                            maxProposalId = r.promisedProposalId;
+                        }
+                    }
+                    env.persistent.saveProposalIdOnProposer(paxosId, maxProposalId);
+                    // TODO: congestion control
+                    start(env);
                 }
                 return;
             }
-
-            this.accept_resp_map.put(resp.server_id, resp);
-
-            if (this.accept_resp_map.size() >= env.config.getServers().size() / 2 + 1) {
-                if (this.proposal_value.equals(this.paxos_value)) {
-                    this.stop(env);
+            /*
+             * When response received from majority:
+             * Any rejections (result > n)? goto (1)
+             * Otherwise, value is chosen.
+             */
+            acceptRespMap.put(resp.serverId, resp);
+            if (acceptRespMap.size() >= env.config.getMajoritySize()) {
+                env.persistent.saveProposalIdOnProposer(paxosId, proposalId);
+                env.persistent.savePaxosId(paxosId + 1);
+                if (proposalValue.equals(paxosValue)) {
+                    stop(env);
                 } else {
-                    this.start(env);
+                    start(env);
                 }
             }
         }

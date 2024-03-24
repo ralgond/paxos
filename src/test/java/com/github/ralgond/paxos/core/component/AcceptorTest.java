@@ -26,47 +26,69 @@ public class AcceptorTest {
         var sender = (PaxosPacketSenderTest)env.sender;
         var persistent = (PaxosPersistentTest)env.persistent;
 
-        //
-        PaxosPrepareRequest req = new PaxosPrepareRequest(1, 2L);
-        acceptor.onRecvPrepareRequest(req);
-        assertEquals(1, sender.prepare_resp_list.size());
-        PaxosPrepareResponse resp = sender.prepare_resp_list.get(0);
+        /*
+         * 1. accepted == null
+         */
+        PaxosPrepareRequest req1 = new PaxosPrepareRequest(1, 0L, 1L);
+        acceptor.onRecvPrepareRequest(req1);
+        assertEquals(1, sender.prepareRespList.size());
+        System.out.println(sender.prepareRespList);
+        assertEquals(new PaxosPrepareResponse(1, 0L, 1L,
+                new PaxosAccepted(1L, -1L, new PaxosValue()), true), sender.prepareRespList.get(0));
+        sender.prepareRespList.clear();
 
-        PaxosPrepareResponse resp_test = new PaxosPrepareResponse(1, 2L, -1L, new PaxosAccepted());
-        assertEquals(resp, resp_test);
-
-        assertEquals(Long.valueOf(2L), persistent.proposalIdOnAcceptor);
-
-        //
-        PaxosPrepareRequest req2 = new PaxosPrepareRequest(1, 2L);
+        /*
+         * 2. accepted != null && accepted.promisedId < req.proposalId
+         */
+        PaxosPrepareRequest req2 = new PaxosPrepareRequest(1, 0L, 3L);
         acceptor.onRecvPrepareRequest(req2);
-        assertEquals(2, sender.prepare_resp_list.size());
-        PaxosPrepareResponse resp2 = sender.prepare_resp_list.get(1);
+        assertEquals(1, sender.prepareRespList.size());
+        System.out.println(sender.prepareRespList);
+        assertEquals(new PaxosPrepareResponse(1, 0L, 3L,
+                new PaxosAccepted(3L, -1L, new PaxosValue()), true), sender.prepareRespList.get(0));
+        sender.prepareRespList.clear();
+        System.out.println(persistent.acceptedMap);
 
-        PaxosPrepareResponse resp_test2 = new PaxosPrepareResponse(1, 2L, 2L, new PaxosAccepted());
-        assertEquals(resp2, resp_test2);
-
-        assertEquals(Long.valueOf(2L), persistent.proposalIdOnAcceptor);
-
-        //
-        PaxosPrepareRequest req3 = new PaxosPrepareRequest(1, 4L);
+        /*
+         * 3. accepted != null && accepted.promisedId >= req.proposalId
+         */
+        PaxosPrepareRequest req3 = new PaxosPrepareRequest(1, 0L, 2L);
         acceptor.onRecvPrepareRequest(req3);
-        assertEquals(3, sender.prepare_resp_list.size());
-        PaxosPrepareResponse resp3 = sender.prepare_resp_list.get(2);
+        assertEquals(1, sender.prepareRespList.size());
+        System.out.println(sender.prepareRespList);
+        assertEquals(new PaxosPrepareResponse(1, 0L, 2L,
+                new PaxosAccepted(3L, -1L, new PaxosValue()), false), sender.prepareRespList.get(0));
+        sender.prepareRespList.clear();
 
-        PaxosPrepareResponse resp_test3 = new PaxosPrepareResponse(1, 4L, 2L, new PaxosAccepted());
-        assertEquals(resp3, resp_test3);
+        /*
+         * 4. accepted == null
+         */
+        PaxosAcceptRequest req4 = new PaxosAcceptRequest(1, 1L, 1L, new PaxosValue(1, 1L, "abc"));
+        acceptor.onRecvAcceptRequest(req4);
+        assertEquals(1, sender.acceptRespList.size());
+        System.out.println(sender.acceptRespList);
+        assertEquals(new PaxosAcceptResponse(1, 1L, 1L, 1L, true), sender.acceptRespList.get(0));
+        sender.acceptRespList.clear();
 
-        assertEquals(Long.valueOf(4L), persistent.proposalIdOnAcceptor);
+        /*
+         * 5. accepted != null && accepted.promisedId <= req.proposalId
+         */
+        PaxosAcceptRequest req5 = new PaxosAcceptRequest(1, 0L, 3L, new PaxosValue(1, 1L, "abc"));
+        acceptor.onRecvAcceptRequest(req5);
+        assertEquals(1, sender.acceptRespList.size());
+        System.out.println(sender.acceptRespList);
+        assertEquals(new PaxosAcceptResponse(1, 0L, 3L, 3L, true), sender.acceptRespList.get(0));
+        sender.acceptRespList.clear();
 
-        //
-        PaxosPrepareRequest req4 = new PaxosPrepareRequest(1, 2L);
-        acceptor.onRecvPrepareRequest(req4);
-        assertEquals(4, sender.prepare_resp_list.size());
-        PaxosPrepareResponse resp4 = sender.prepare_resp_list.get(3);
-
-        PaxosPrepareResponse resp_test4 = new PaxosPrepareResponse(1, 2L, 4L, new PaxosAccepted());
-        assertEquals(resp4, resp_test4);
+        /*
+         * 6. accepted == null && accepted.promisedId > req.proposalId
+         */
+        PaxosAcceptRequest req6 = new PaxosAcceptRequest(1, 0L, 2L, new PaxosValue(1, 1L, "abc"));
+        acceptor.onRecvAcceptRequest(req6);
+        assertEquals(1, sender.acceptRespList.size());
+        System.out.println(sender.acceptRespList);
+        assertEquals(new PaxosAcceptResponse(1, 0L, 2L, 3L, false), sender.acceptRespList.get(0));
+        sender.acceptRespList.clear();
     }
 
     @Test
@@ -82,29 +104,5 @@ public class AcceptorTest {
         var sender = (PaxosPacketSenderTest) env.sender;
         var persistent = (PaxosPersistentTest) env.persistent;
 
-        //
-        PaxosPrepareRequest prepare_req = new PaxosPrepareRequest(1, 2L);
-        acceptor.onRecvPrepareRequest(prepare_req);
-        assertEquals(1, sender.prepare_resp_list.size());
-        PaxosPrepareResponse prepare_resp = sender.prepare_resp_list.get(0);
-
-        //
-        PaxosAcceptRequest req1 = new PaxosAcceptRequest(1, 1L, new PaxosValue(1, 1L, "abc"));
-        acceptor.onRecvAcceptRequest(req1);
-        assertEquals(1, sender.accept_resp_list.size());
-        PaxosAcceptResponse resp1 = sender.accept_resp_list.get(0);
-        assertFalse(resp1.isAccepted());
-        assertTrue(persistent.acceptedMap.isEmpty());
-
-        //
-        PaxosAcceptRequest req2 = new PaxosAcceptRequest(1, 2L, new PaxosValue(1, 1L, "abc"));
-        acceptor.onRecvAcceptRequest(req2);
-        assertEquals(2, sender.accept_resp_list.size());
-        PaxosAcceptResponse resp2 = sender.accept_resp_list.get(1);
-        assertTrue(resp2.isAccepted());
-        assertFalse(persistent.acceptedMap.isEmpty());
-        PaxosAccepted pa = persistent.acceptedMap.get(2L);
-        assertEquals(Long.valueOf(2L), pa.proposal);
-        assertEquals(pa.value, new PaxosValue(1, 1L, "abc"));
     }
 }

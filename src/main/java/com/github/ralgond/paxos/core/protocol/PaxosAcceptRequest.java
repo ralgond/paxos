@@ -2,25 +2,44 @@ package com.github.ralgond.paxos.core.protocol;
 
 import com.github.ralgond.paxos.core.common.PaxosValue;
 
+import java.util.Objects;
+
 public class PaxosAcceptRequest {
-    public Integer server_id;
+    public Integer serverId;
 
-    public Long proposal_id;
+    public long paxosId;
 
-    public PaxosValue proposal_value;
+    public Long proposalId;
 
-    public PaxosAcceptRequest(Integer server_id, Long proposal_id, PaxosValue proposal_value) {
-        this.server_id = server_id;
-        this.proposal_id = proposal_id;
-        this.proposal_value = proposal_value;
+    public PaxosValue proposalValue;
+
+    public PaxosAcceptRequest(Integer serverId, long paxosId, Long proposalId, PaxosValue proposalValue) {
+        this.serverId = serverId;
+        this.paxosId = paxosId;
+        this.proposalId = proposalId;
+        this.proposalValue = proposalValue;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        PaxosAcceptRequest that = (PaxosAcceptRequest) o;
+        return paxosId == that.paxosId && Objects.equals(serverId, that.serverId) && Objects.equals(proposalId, that.proposalId) && Objects.equals(proposalValue, that.proposalValue);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(serverId, paxosId, proposalId, proposalValue);
     }
 
     @Override
     public String toString() {
         return "PaxosAcceptRequest{" +
-                "server_id=" + server_id +
-                ", proposal_id=" + proposal_id +
-                ", proposal_value=" + proposal_value +
+                "serverId=" + serverId +
+                ", paxosId=" + paxosId +
+                ", proposalId=" + proposalId +
+                ", proposalValue=" + proposalValue +
                 '}';
     }
 }

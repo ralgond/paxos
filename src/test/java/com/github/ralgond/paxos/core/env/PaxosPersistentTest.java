@@ -8,17 +8,17 @@ public class PaxosPersistentTest implements PaxosPersistent {
 
     public Long serialNumber;
 
-    public Long proposalIdOnProposer;
+    public Long paxosId;
 
-    public Long proposalIdOnAcceptor;
+    public TreeMap<Long, Long> proposalIdOnProposerMap;
 
     public TreeMap<Long, PaxosAccepted> acceptedMap;
 
     public PaxosPersistentTest() {
-        this.serialNumber = 0L;
-        this.proposalIdOnProposer = -1L;
-        this.proposalIdOnAcceptor = -1L;
-        this.acceptedMap = new TreeMap<>();
+        serialNumber = 0L;
+        paxosId = 0L;
+        proposalIdOnProposerMap = new TreeMap<>();
+        acceptedMap = new TreeMap<>();
     }
 
     @Override
@@ -38,36 +38,32 @@ public class PaxosPersistentTest implements PaxosPersistent {
     }
 
     @Override
-    public void saveProposalIdOnProposer(Long proposalId) {
-        this.proposalIdOnProposer = proposalId;
+    public Long getPaxosId() {
+        return paxosId;
     }
 
     @Override
-    public Long getProposalIdOnProposer() {
-        return this.proposalIdOnProposer;
+    public void savePaxosId(Long paxosId) {
+        this.paxosId = paxosId;
     }
 
     @Override
-    public Long getProposalIdOnAcceptor() {
-        return this.proposalIdOnAcceptor;
+    public void saveProposalIdOnProposer(Long paxosId, Long proposalId) {
+        proposalIdOnProposerMap.put(paxosId, proposalId);
     }
 
     @Override
-    public void saveProposalIdOnAcceptor(Long proposalId) {
-        this.proposalIdOnAcceptor = proposalId;
+    public Long getProposalIdOnProposer(Long paxosId) {
+        return proposalIdOnProposerMap.getOrDefault(paxosId, -1L);
     }
 
     @Override
-    public PaxosAccepted getMaxProposalIdAccepted() {
-        if (this.acceptedMap.isEmpty())
-            return null;
-
-        var entry = this.acceptedMap.lastEntry();
-        return entry.getValue();
+    public PaxosAccepted getAccepted(Long paxosId) {
+        return acceptedMap.get(paxosId);
     }
 
     @Override
-    public void saveAccepted(PaxosAccepted accepted) {
-        this.acceptedMap.put(accepted.proposal, accepted);
+    public void saveAccepted(Long paxosId, PaxosAccepted accepted) {
+        acceptedMap.put(paxosId, accepted);
     }
 }

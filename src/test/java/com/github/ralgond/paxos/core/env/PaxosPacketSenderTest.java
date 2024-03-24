@@ -9,35 +9,35 @@ import java.util.ArrayList;
 
 public class PaxosPacketSenderTest implements PaxosPacketSender {
 
-    public ArrayList<PaxosPrepareRequest> prepare_req_list;
-    public ArrayList<PaxosPrepareResponse> prepare_resp_list;
-    public ArrayList<PaxosAcceptRequest> accept_req_list;
-    public ArrayList<PaxosAcceptResponse> accept_resp_list;
+    public ArrayList<PaxosPrepareRequest> prepareReqList;
+    public ArrayList<PaxosPrepareResponse> prepareRespList;
+    public ArrayList<PaxosAcceptRequest> acceptReqList;
+    public ArrayList<PaxosAcceptResponse> acceptRespList;
 
     public PaxosPacketSenderTest() {
-        prepare_req_list = new ArrayList<>();
-        prepare_resp_list = new ArrayList<>();
-        accept_req_list = new ArrayList<>();
-        accept_resp_list = new ArrayList<>();
+        prepareReqList = new ArrayList<>();
+        prepareRespList = new ArrayList<>();
+        acceptReqList = new ArrayList<>();
+        acceptRespList = new ArrayList<>();
     }
 
     @Override
     public void sendPrepareRequest(PaxosPrepareRequest req) {
-        prepare_req_list.add(req);
+        prepareReqList.add(req);
     }
 
     @Override
     public void sendPrepareResponse(PaxosPrepareResponse resp) {
-        prepare_resp_list.add(resp);
+        prepareRespList.add(resp);
     }
 
     @Override
     public void sendAcceptRequest(PaxosAcceptRequest req) {
-        accept_req_list.add(req);
+        acceptReqList.add(req);
     }
 
     @Override
     public void sendAcceptResponse(PaxosAcceptResponse resp) {
-        accept_resp_list.add(resp);
+        acceptRespList.add(resp);
     }
 }

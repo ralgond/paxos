@@ -8,12 +8,12 @@ public class PaxosEnvironment {
 
     public PaxosPersistent persistent;
 
-    public PaxosTimerManager timer_manager;
+    public PaxosTimerManager timerManager;
 
-    public PaxosEnvironment(PaxosConfig config, PaxosPacketSender sender, PaxosPersistent persistent, PaxosTimerManager timer_manager) {
+    public PaxosEnvironment(PaxosConfig config, PaxosPacketSender sender, PaxosPersistent persistent, PaxosTimerManager timerManager) {
         this.config = config;
         this.sender = sender;
         this.persistent = persistent;
-        this.timer_manager = timer_manager;
+        this.timerManager = timerManager;
     }
 }

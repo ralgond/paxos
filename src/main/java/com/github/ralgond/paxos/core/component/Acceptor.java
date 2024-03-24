@@ -17,48 +17,54 @@ public class Acceptor {
     }
 
     public void onRecvPrepareRequest(PaxosPrepareRequest req) {
-        if (!req.server_id.equals(env.config.getServerId()))
+        if (!req.serverId.equals(env.config.getServerId()))
             return;
 
-        Long proposal_id_on_acceptor = env.persistent.getProposalIdOnAcceptor();
-        if (req.proposal_id > proposal_id_on_acceptor) {
-            /*
-             * n > minProposal the minProposal = n
-             * Return (acceptedProposal, acceptedValue)
-             */
-            env.persistent.saveProposalIdOnAcceptor(req.proposal_id);
-            var pa = env.persistent.getMaxProposalIdAccepted();
-            if (pa == null) {
-                pa = new PaxosAccepted();
-            }
-            var resp = new PaxosPrepareResponse(req.server_id, req.proposal_id, proposal_id_on_acceptor, pa);
+        /*
+         * n > minProposal the minProposal = n
+         * Return (acceptedProposal, acceptedValue)
+         */
+
+        PaxosAccepted accepted = env.persistent.getAccepted(req.paxosId);
+        if (accepted == null || accepted.promisedId < req.proposalId) {
+            // promise
+            Long promisedIdOnAcceptor = req.proposalId;
+            Long acceptedIdOnAcceptor = (accepted == null ? -1 : accepted.acceptedId);
+            var pa = new PaxosAccepted(promisedIdOnAcceptor, acceptedIdOnAcceptor, new PaxosValue());
+            env.persistent.saveAccepted(req.paxosId, pa);
+            var resp = new PaxosPrepareResponse(req.serverId, req.paxosId, req.proposalId, pa, true);
             env.sender.sendPrepareResponse(resp);
         } else {
-            // Reject the request.
-            var resp = new PaxosPrepareResponse(req.server_id, req.proposal_id, proposal_id_on_acceptor, new PaxosAccepted());
+            // reject
+            Long promisedIdOnAcceptor = accepted.promisedId;
+            Long acceptedIdOnAcceptor = accepted.acceptedId;
+            var resp = new PaxosPrepareResponse(req.serverId, req.paxosId, req.proposalId,
+                    new PaxosAccepted(promisedIdOnAcceptor, acceptedIdOnAcceptor, new PaxosValue()), false);
             env.sender.sendPrepareResponse(resp);
         }
     }
 
     public void onRecvAcceptRequest(PaxosAcceptRequest req) {
-        if (!req.server_id.equals(env.config.getServerId()))
+        if (!req.serverId.equals(env.config.getServerId()))
             return;
 
-        Long proposal_id_on_acceptor = env.persistent.getProposalIdOnAcceptor();
-        if (req.proposal_id >= proposal_id_on_acceptor) {
-            /*
-             * if n >= minProposal then acceptedProposal = minProposal = n, acceptedValue = value
-             * return (minProposal)
-             */
-            proposal_id_on_acceptor = req.proposal_id;
-            env.persistent.saveProposalIdOnAcceptor(req.proposal_id);
-            var pa = new PaxosAccepted(req.proposal_id, req.proposal_value);
-            env.persistent.saveAccepted(pa);
-            var resp = new PaxosAcceptResponse(req.server_id, req.proposal_id, proposal_id_on_acceptor);
+        /*
+         * if n >= minProposal then acceptedProposal = minProposal = n, acceptedValue = value
+         * return (minProposal)
+         */
+
+        PaxosAccepted accepted = env.persistent.getAccepted(req.paxosId);
+        if (accepted == null || accepted.promisedId <= req.proposalId) {
+            var promisedId = req.proposalId;
+            var acceptedProposalId = req.proposalId;
+            var acceptedValue = req.proposalValue;
+            env.persistent.saveAccepted(req.paxosId, new PaxosAccepted(promisedId, acceptedProposalId, acceptedValue));
+            var resp = new PaxosAcceptResponse(req.serverId, req.paxosId, req.proposalId, promisedId, true);
             env.sender.sendAcceptResponse(resp);
         } else {
-            // Reject the request
-            var resp = new PaxosAcceptResponse(req.server_id, req.proposal_id, proposal_id_on_acceptor);
+            // reject
+            Long promisedIdOnAcceptor = accepted.promisedId;
+            var resp = new PaxosAcceptResponse(req.serverId, req.paxosId, req.proposalId, promisedIdOnAcceptor, false);
             env.sender.sendAcceptResponse(resp);
         }
     }
