@@ -65,6 +65,16 @@ public class ProposerTest {
                 new PaxosAcceptResponse(3, 0L, 0L, 0L, true), env
         );
         assertTrue(proposer.state_machine.isStopped());
+
+        /*
+         * received responses after stopped
+         */
+        proposer.state_machine.onRecvPrepareResponse(new PaxosPrepareResponse(1, 0L, 0L, new PaxosAccepted(), true), env);
+        proposer.state_machine.onRecvPrepareResponse(new PaxosPrepareResponse(1, 0L, 0L, new PaxosAccepted(), true), env);
+        assertTrue(proposer.state_machine.nothingChangeAfterStopped());
+        proposer.state_machine.onRecvAcceptResponse(new PaxosAcceptResponse(1, 0L, 0L, 0L, true), env);
+        proposer.state_machine.onRecvAcceptResponse(new PaxosAcceptResponse(1, 0L, 0L, 0L, true), env);
+        assertTrue(proposer.state_machine.nothingChangeAfterStopped());
     }
 
     @Test
@@ -167,6 +177,41 @@ public class ProposerTest {
         assertEquals(new PaxosPrepareRequest(1, 1L, 0L), sender.prepareReqList.get(0));
         assertEquals(new PaxosPrepareRequest(2, 1L, 0L), sender.prepareReqList.get(1));
         assertEquals(new PaxosPrepareRequest(3, 1L, 0L), sender.prepareReqList.get(2));
+        assertTrue(proposer.state_machine.isPreparing());
+        sender.prepareReqList.clear();
+    }
+
+    @Test
+    public void test03() {
+        var env = new PaxosEnvironmentTest(new PaxosConfigTest(),
+                new PaxosPacketSenderTest(),
+                new PaxosPersistentTest(),
+                new PaxosTimerManagerTest());
+
+        var acceptor = new Acceptor();
+        acceptor.start(env);
+
+        var sender = (PaxosPacketSenderTest) env.sender;
+        var persistent = (PaxosPersistentTest) env.persistent;
+
+        /*
+         * start
+         */
+        Proposer proposer = new Proposer();
+        proposer.start(env, "abc");
+        System.out.println(sender.prepareReqList);
+        assertEquals(3, sender.prepareReqList.size());
+        assertEquals(new PaxosPrepareRequest(1, 0L, 0L), sender.prepareReqList.get(0));
+        assertEquals(new PaxosPrepareRequest(2, 0L, 0L), sender.prepareReqList.get(1));
+        assertEquals(new PaxosPrepareRequest(3, 0L, 0L), sender.prepareReqList.get(2));
+        assertTrue(proposer.state_machine.isPreparing());
+        sender.prepareReqList.clear();
+
+        proposer.state_machine.onTimeout(env);
+        assertEquals(3, sender.prepareReqList.size());
+        assertEquals(new PaxosPrepareRequest(1, 0L, 0L), sender.prepareReqList.get(0));
+        assertEquals(new PaxosPrepareRequest(2, 0L, 0L), sender.prepareReqList.get(1));
+        assertEquals(new PaxosPrepareRequest(3, 0L, 0L), sender.prepareReqList.get(2));
         assertTrue(proposer.state_machine.isPreparing());
         sender.prepareReqList.clear();
     }
