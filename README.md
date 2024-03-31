@@ -8,7 +8,7 @@ A Java implementation of Paxos algorithm
 Java 22
 
 ## Phases
-
+![image](image/paxos.jpeg)
 ### Phase 1
 (a) A proposer selects a proposal number n and sends a prepare request with number n to a majority of acceptors.
 
